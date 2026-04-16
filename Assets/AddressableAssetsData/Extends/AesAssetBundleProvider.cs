@@ -208,8 +208,9 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
                     //
                     String filePath = GetEncryptedAssetLocalPath(m_InternalId, m_Options);
                     saveDownloadBundle(inputStream, filePath);
+                    inputStream.Seek(0, SeekOrigin.Begin);
                     //
-                    var dataStream = new SeekableAesStream(inputStream);
+                    var dataStream = CreateBundleReadStream(inputStream);
                     if (dataStream.CanSeek)
                     {
                         m_AssetBundle = AssetBundle.LoadFromStream(dataStream, crc);
@@ -517,7 +518,7 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
             {
                 fileStream = new FileStream(path, FileMode.Open, FileAccess.Read);
             }
-            var dataStream = new SeekableAesStream(fileStream);
+            var dataStream = CreateBundleReadStream(fileStream);
             if (dataStream.CanSeek)
             {
                 m_RequestOperation = AssetBundle.LoadFromStreamAsync(dataStream, crc);
@@ -534,6 +535,24 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
                 memStream.Position = 0;
                 m_RequestOperation = AssetBundle.LoadFromStreamAsync(memStream, crc);
             }
+        }
+
+        private Stream CreateBundleReadStream(Stream inputStream)
+        {
+            if (inputStream == null)
+                throw new ArgumentNullException(nameof(inputStream));
+
+            if (!inputStream.CanSeek)
+                return new SeekableAesStream(inputStream);
+
+            inputStream.Position = 0;
+            bool isTransformed = SeekableAesStream.IsHeaderTransformed(inputStream);
+            inputStream.Position = 0;
+
+            if (!isTransformed)
+                return inputStream;
+
+            return new SeekableAesStream(inputStream);
         }
 
 

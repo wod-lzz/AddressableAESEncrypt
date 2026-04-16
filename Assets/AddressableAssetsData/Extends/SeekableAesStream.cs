@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Text;
 
 
 namespace UnityEngine.ResourceManagement.ResourceProviders
@@ -26,6 +27,13 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
         };
 
         private const int EscapeLength = 256;
+        private static readonly byte[][] KnownBundleHeaders =
+        {
+            Encoding.ASCII.GetBytes("UnityFS"),
+            Encoding.ASCII.GetBytes("UnityWeb"),
+            Encoding.ASCII.GetBytes("UnityRaw"),
+            Encoding.ASCII.GetBytes("UnityArchive")
+        };
         private static readonly uint[] Sigma =
         {
             0x61707865,
@@ -78,6 +86,62 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
             {
                 stream.Position = originalPosition;
             }
+        }
+
+        public static bool IsHeaderTransformed(Stream stream)
+        {
+            if (stream == null)
+                throw new ArgumentNullException(nameof(stream));
+            if (!stream.CanRead || !stream.CanSeek)
+                throw new NotSupportedException("Stream must support read and seek for header detection.");
+
+            long originalPosition = stream.Position;
+            try
+            {
+                stream.Position = 0;
+                int probeLength = (int)Math.Min(16, stream.Length);
+                if (probeLength <= 0)
+                    return false;
+
+                byte[] headerBuffer = new byte[probeLength];
+                int readLength = stream.Read(headerBuffer, 0, probeLength);
+                if (readLength <= 0)
+                    return false;
+
+                if (HasKnownBundleHeader(headerBuffer, readLength))
+                    return false;
+
+                ApplyCipher(headerBuffer, 0, readLength, 0);
+                return HasKnownBundleHeader(headerBuffer, readLength);
+            }
+            finally
+            {
+                stream.Position = originalPosition;
+            }
+        }
+
+        private static bool HasKnownBundleHeader(byte[] buffer, int count)
+        {
+            foreach (var header in KnownBundleHeaders)
+            {
+                if (count < header.Length)
+                    continue;
+
+                bool matched = true;
+                for (int i = 0; i < header.Length; i++)
+                {
+                    if (buffer[i] != header[i])
+                    {
+                        matched = false;
+                        break;
+                    }
+                }
+
+                if (matched)
+                    return true;
+            }
+
+            return false;
         }
 
         private static void ApplyCipher(byte[] buffer, int offset, int count, long streamPos)
