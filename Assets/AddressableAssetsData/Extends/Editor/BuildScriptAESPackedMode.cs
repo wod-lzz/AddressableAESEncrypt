@@ -34,10 +34,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
 
         private void EncryptBundleWithAES(string bundlePath)
         {
-            var data = File.ReadAllBytes(bundlePath);
-            using var baseStream = new FileStream(bundlePath, FileMode.OpenOrCreate);
-            var cryptor = new SeekableAesStream(baseStream);
-            cryptor.Write(data, 0, data.Length);
+            SeekableAesStream.TransformFileHeaderInPlace(bundlePath);
         }
     }
 }
