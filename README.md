@@ -1,5 +1,7 @@
 # AddressableAESEncrypt
 
+* Languages: 中文 (current) | [日本語](README.ja.md) | [English](#en)
+
 * 保留原有 AES Build Script / AES AssetBundle Provider 接入方式
 * 原则：不入侵Addressable源码
 * Base：Unity 2022.2.9 Addressable 1.21.9
