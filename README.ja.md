@@ -1,6 +1,6 @@
 # AddressableAESEncrypt
 
-* Languages: [中文](README.md) | 日本語 | [English](README.md#en)
+* Languages: [中文](README.md) | 日本語 (current) | [English](README.md#en)
 
 * 既存の AES Build Script / AES AssetBundle Provider の統合フローを維持
 * 方針: Addressables のソースコードには手を入れない
